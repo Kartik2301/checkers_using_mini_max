@@ -2,6 +2,8 @@
 
 import pygame
 from individual_checker import individual_checker
+from copy import deepcopy
+import math
 #dimensions
 
 m = 8
@@ -33,10 +35,135 @@ pygame.display.set_caption("IIT2018156")
 
 running = True
 
-font = pygame.font.Font('freesansbold.ttf',64)
+font = pygame.font.Font('freesansbold.ttf',40)
 
 def valid(x,y):
     return (x >= 0 and x < 8 and y >= 0 and y < 8)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+def calculate_inidivs(board):
+    red = 0
+    blue = 0
+    king_red = 0
+    king_blue = 0
+    for i in range(8):
+        for j in range(8):
+            if board[i][j] != None:
+                if board[i][j].color == (255, 0, 0):
+                    red += 1
+                    if board[i][j].isKing == True:
+                        king_red += 1
+                if board[i][j].color == (0, 0, 255):
+                    blue += 1
+                    if board[i][j].isKing == True:
+                        king_blue += 1
+    return (red, blue, king_red, king_blue)
+
+def check_board_for_winners(board):
+    (red, blue, king_red, king_blue) = calculate_inidivs(board)
+    if (red == 0) or (blue == 0):
+        return True
+    return False
+
+def score(board):
+    (red, blue, king_red, king_blue) = calculate_inidivs(board)
+    return ((blue - red) + (king_blue - king_red))
+
+    # 1 => MAX => blue
+    # 2 => MIN => red
+
+def get_all(board, player):
+    found = []
+    color = (255, 255, 255)
+    if player == 2:
+        color = (255, 0, 0)
+    elif player == 1:
+        color = (0, 0, 255)
+
+    for i in range(8):
+        for j in range(8):
+            if board[i][j] != None:
+                if board[i][j].color == color:
+                    found.append((i, j))
+
+    return found
+
+def move_to_target_new(board, a, b, target_a, target_b):
+
+    item = board[a][b]
+    board[a][b] = None
+    board[target_a][target_b] = item
+    return True
+
+def state_list(board, player):
+    all_moves = get_all(board, player)
+    all_possible_all_moves = []
+    for item in all_moves:
+        dict_moves = get_all_valid_move(item[0], item[1])
+        for keys, toRemove in dict_moves.items():
+            temp_board = deepcopy(board)
+            ket = keys.split(" ")
+            move_to_target_new(temp_board, item[0], item[1], int(ket[0]), int(ket[1]))
+            for item in toRemove:
+                temp_board[item[0]][item[1]] = None
+            all_possible_all_moves.append(temp_board)
+
+    return all_possible_all_moves
+
+
+def minimax(board, h, player):
+    if h == 0 or check_board_for_winners(board):
+        return score(board), board
+
+    if player == 1:
+        v = -math.inf
+        best_action = None
+        # get all possible new states
+        for s in state_list(board, player):
+            v_new = minimax(board, h - 1, 2)[0]
+            if v_new > v:
+                best_action = s
+                v = v_new
+        return v, best_action
+    elif player == 2:
+        v = math.inf
+        best_action = None
+        # get all possible new states
+        for s in state_list(board, player):
+            v_new = minimax(board, h - 1, 1)[0]
+            if v_new < v:
+                best_action = s
+                v = v_new
+        return v, best_action
+
+
+
+
+
+
+
+
+
+
+
 
 
 def get_all_by_jumps(killed, row, col,moves,step) :
@@ -161,17 +288,23 @@ def get_all_valid_move(row,col):
             return moves
 
 def check_for_kings():
+    global kingsA
+    global kingsB
     for i in range(m):
         for j in range(n):
             if board[i][j] == None: continue
             if board[i][j].color == (255,0,0) and i == 7:
+                kingsA += 1
                 board[i][j].isKing = True
             if board[i][j].color == (0,0,255) and i == 0:
+                kingsB += 1
                 board[i][j].isKing = True
 
 def who_won_the_game_text(winner):
-    over_text = font.render("Game Over, " + str(winner) + " HAS WON", True, (255, 255, 255))
-    screen.blit(over_text, (200, 250))
+    global game_over
+    over_text = font.render("Game Over, " + str(winner) + " HAS WON", True, (0, 255, 0))
+    screen.blit(over_text, (45, 350))
+    game_over = True
 
 
 def move_to_target(a, b, target_a, target_b):
@@ -217,12 +350,14 @@ for i in range(m):
             semi.append(None)
     board.append(semi)
 
+font1 = pygame.font.Font('freesansbold.ttf',64)
+
 def display_whose_turn():
     if turnA == True:
-        over_text = font.render("Turn of A", True, (0, 255, 0))
+        over_text = font1.render("Turn of A", True, (0, 255, 0))
     else :
-        over_text = font.render("Turn of B", True, (0, 255, 0))
-    screen.blit(over_text, (200, 320))
+        over_text = font1.render("Turn of B", True, (0, 255, 0))
+    screen.blit(over_text, (200, 340))
 
 new_font = pygame.font.Font('freesansbold.ttf',15)
 def display_rem_checkers():
@@ -256,20 +391,21 @@ def draw_board():
 initial_x = -1
 initial_y = -1
 allMoves = {}
+game_over = False
+
+
+
 while running:
 
     screen.fill((0, 0, 0))
-    if checkersA == 0:
-        who_won_the_game_text("B (blue)")
-        running = False
-    elif checkersB == 0:
-        who_won_the_game_text("A (red)")
-        running = False
-
+    if turnB == True:
+        board = minimax(deepcopy(board), 4,1)[1]
+        turnA = True
+        turnB = False
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
+        if (event.type == pygame.QUIT):
             running = False
-        if event.type == pygame.MOUSEBUTTONDOWN:
+        if (event.type == pygame.MOUSEBUTTONDOWN) and (turnA == True):
             clicked = event.pos
             cols = clicked[0]//88
             rows = clicked[1]//88
@@ -296,7 +432,6 @@ while running:
                     if check == True:
                         initial_x = rows
                         initial_y = cols
-                print(inTheProcess)
 
             elif (board[rows][cols] == None or board[rows][cols].color == (125,125,125)) and len(allMoves) > 0 and inTheProcess == True:
                 print(allMoves)
@@ -325,9 +460,14 @@ while running:
                         inTheProcess = False
 
     draw_board()
-    display_whose_turn()
+    if game_over == False:
+        display_whose_turn()
     display_rem_checkers()
     check_for_kings()
     copy_board = board
+    if checkersA == 0:
+        who_won_the_game_text("B (blue)")
+    elif checkersB == 0:
+        who_won_the_game_text("A (red)")
 
     pygame.display.update()
