@@ -36,124 +36,6 @@ new_font = pygame.font.Font('freesansbold.ttf', 15)
 def valid(x, y):
     return (x >= 0 and x < 8 and y >= 0 and y < 8)
 
-# get number of red, blue checkers and also kings
-def calculate_inidivs(board):
-    red = 0
-    blue = 0
-    king_red = 0
-    king_blue = 0
-    if board == None:
-        return (0,0,0,0)
-    for i in range(8):
-        for j in range(8):
-            if board[i][j] != None:
-                if board[i][j].color == (255, 0, 0):
-                    red += 1
-                    if board[i][j].isKing == True:
-                        king_red += 1
-                if board[i][j].color == (0, 0, 255):
-                    blue += 1
-                    if board[i][j].isKing == True:
-                        king_blue += 1
-    return (red, blue, king_red, king_blue)
-
-# if somebody has already won the game => True else False
-def check_board_for_winners(board):
-    (red, blue, king_red, king_blue) = calculate_inidivs(board)
-    if (red == 0) or (blue == 0):
-        return True
-    return False
-
-
-# Reference taken from line 18-19 at https://github.com/techwithtim/Python-Checkers-AI/blob/master/checkers/board.py
-def score(board):
-    (red, blue, king_red, king_blue) = calculate_inidivs(board)
-    return (2*(blue - red) + (king_blue - king_red))
-
-    # player 1 => MAX => blue
-    # player 2 => MIN => red
-
-# return all checkers for a particular player
-def get_all(board, player):
-    found = []
-    color = (255, 255, 255)
-    if player == 2:
-        color = (255, 0, 0)
-    elif player == 1:
-        color = (0, 0, 255)
-
-    for i in range(8):
-        for j in range(8):
-            if board[i][j] != None:
-                if board[i][j].color == color:
-                    found.append((i, j))
-
-    return found
-
-# update display, by actually moving the selected checker to the destination (for the computer player)
-def move_to_target_new(board, a, b, target_a, target_b):
-    item = board[a][b]
-    board[a][b] = None
-    board[target_a][target_b] = item
-    return True
-
-# reference taken from https://github.com/techwithtim/Python-Checkers-AI/blob/master/minimax/algorithm.py
-
-def state_list(board, player):
-    """
-         References :-
-         reference taken for "how to implement minimax" from
-         https://github.com/techwithtim/Python-Checkers-AI/blob/master/minimax/algorithm.py
-    """
-    all_moves = get_all(board, player)
-    all_possible_all_moves = []
-    for item in all_moves:
-        dict_moves = get_all_valid_move(item[0], item[1])
-        for keys, toRemove in dict_moves.items():
-            temp_board = deepcopy(board)
-            ket = keys.split(" ")
-            move_to_target_new(temp_board, item[0], item[1], int(ket[0]), int(ket[1]))
-            for item in toRemove:
-                temp_board[item[0]][item[1]] = None
-            all_possible_all_moves.append(temp_board)
-
-    return all_possible_all_moves
-
-
-# referecne taken for "how to implement minimax" from https://github.com/techwithtim/Python-Checkers-AI/blob/master/minimax/algorithm.py
-
-
-def minimax(board, h, player):
-    """
-         References :-
-         reference taken for "how to implement minimax" from
-         https://github.com/techwithtim/Python-Checkers-AI/blob/master/minimax/algorithm.py
-    """
-    if h == 0 or check_board_for_winners(board):
-        return score(board), board
-
-    if player == 1:
-        v = -math.inf
-        best_action = None
-        # get all possible new states
-        for s in state_list(board, player):
-            v_new = minimax(board, h - 1, 2)[0]
-            if v_new > v:
-                best_action = s
-                v = v_new
-        return v, best_action
-    elif player == 2:
-        v = math.inf
-        best_action = None
-        # get all possible new states
-        for s in state_list(board, player):
-            v_new = minimax(board, h - 1, 1)[0]
-            if v_new < v:
-                best_action = s
-                v = v_new
-        return v, best_action
-
-
 def get_all_by_jumps(killed, row, col, moves, step):
     flag = False
     # if board[row][col] == None: return
@@ -397,16 +279,10 @@ game_over = False
 while running:
 
     screen.fill((0, 0, 0))
-    if turnB == True:
-        board = minimax(deepcopy(board), 4, 1)[1]
-        (red,blue,kingsA,kingsB) = calculate_inidivs(deepcopy(board))
-        checkersA = red
-        turnA = not turnA
-        turnB = not turnB
     for event in pygame.event.get():
         if (event.type == pygame.QUIT):
             running = False
-        if (event.type == pygame.MOUSEBUTTONDOWN) and (turnA == True):
+        if (event.type == pygame.MOUSEBUTTONDOWN):
             clicked = event.pos
             cols = clicked[0] // 88
             rows = clicked[1] // 88

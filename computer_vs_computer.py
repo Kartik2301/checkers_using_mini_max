@@ -282,6 +282,7 @@ def get_all_valid_move(row, col):
 def check_for_kings():
     global kingsA
     global kingsB
+    if board == None: return
     for i in range(m):
         for j in range(n):
             if board[i][j] == None: continue
@@ -397,16 +398,26 @@ game_over = False
 while running:
 
     screen.fill((0, 0, 0))
-    if turnB == True:
+    if turnA == True:
+        board = minimax(deepcopy(board), 4, 2)[1]
+        (red,blue,kingsA,kingsB) = calculate_inidivs(deepcopy(board))
+        checkersA = red
+        checkersB = blue
+        turnA = not turnA
+        turnB = not turnB
+    elif turnB == True:
         board = minimax(deepcopy(board), 4, 1)[1]
         (red,blue,kingsA,kingsB) = calculate_inidivs(deepcopy(board))
         checkersA = red
+        checkersB = blue
         turnA = not turnA
         turnB = not turnB
+    if game_over == False:
+        display_whose_turn()
     for event in pygame.event.get():
         if (event.type == pygame.QUIT):
             running = False
-        if (event.type == pygame.MOUSEBUTTONDOWN) and (turnA == True):
+        if (event.type == pygame.MOUSEBUTTONDOWN) and False:
             clicked = event.pos
             cols = clicked[0] // 88
             rows = clicked[1] // 88
